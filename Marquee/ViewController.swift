@@ -67,7 +67,9 @@ class MarqueeView: UIView {
         return [label1, label2, label3]
     }()
     
-    //MARK:- 
+    //       ******************
+    //MARK:- *** Life Cycle ***
+    //       ******************
     convenience init() {
         self.init(frame: .zero)
     }
