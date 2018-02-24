@@ -16,8 +16,17 @@ class ViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.view.backgroundColor = .orange
+        var label1 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+        var label2 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+        var label3 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+        label1.text = "idan"
+        label2.text = "rotem"
+        label3.text = "hillel"
+        label1.backgroundColor = .red
+        label2.backgroundColor = .red
+        label3.backgroundColor = .red
         
-        let marquee: MarqueeView = MarqueeView()
+        let marquee: MarqueeView = MarqueeView(frame: .zero, labels: [label1,label2,label3], scrollDirection: .rightToLeft)
         marqueeContainer.addSubview(marquee)
         
         marquee.leadingAnchor.constraint(equalTo: marqueeContainer.leadingAnchor).isActive = true
@@ -25,6 +34,68 @@ class ViewController: UIViewController {
         marquee.topAnchor.constraint(equalTo: marqueeContainer.topAnchor).isActive = true
         marquee.bottomAnchor.constraint(equalTo: marqueeContainer.bottomAnchor).isActive = true
         
+        view.layoutIfNeeded()
+        
+        setupButton()
+    }
+    
+    let button: UIButton = UIButton(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+    private func setupButton() {
+//        view.addSubview(button)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(action), for: .touchUpInside)
+        button.backgroundColor = .red
+        
+//        action()
+    }
+    
+    private enum axisEnum {
+        case horizontal
+        case vertical
+    }
+    private var axis: axisEnum = .horizontal
+    
+    var leadingAnchor: NSLayoutConstraint!
+    var trailingAnchor: NSLayoutConstraint!
+    var topAnchor: NSLayoutConstraint!
+    var bottomAnchor: NSLayoutConstraint!
+    var widthAnchor: NSLayoutConstraint!
+    var heightAnchor: NSLayoutConstraint!
+    var centerXAnchor: NSLayoutConstraint!
+    var centerYAnchor: NSLayoutConstraint!
+
+    @objc func action() {
+        leadingAnchor = button.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        trailingAnchor = button.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        topAnchor = button.topAnchor.constraint(equalTo: view.topAnchor)
+        bottomAnchor = button.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        widthAnchor = button.widthAnchor.constraint(equalToConstant: view.frame.width/2)
+        heightAnchor = button.heightAnchor.constraint(equalToConstant: view.frame.height/2)
+        centerXAnchor = button.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        centerYAnchor = button.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+
+        if axis == .vertical {
+            leadingAnchor.isActive = true
+            trailingAnchor.isActive = true
+            centerYAnchor.isActive = true
+            heightAnchor.isActive = true
+            topAnchor.isActive = false
+            bottomAnchor.isActive = false
+            centerXAnchor.isActive = false
+            widthAnchor.isActive = false
+            axis = .horizontal
+        } else {
+            topAnchor.isActive = true
+            bottomAnchor.isActive = true
+            centerXAnchor.isActive = true
+            widthAnchor.isActive = true
+            leadingAnchor.isActive = false
+            trailingAnchor.isActive = false
+            centerYAnchor.isActive = false
+            heightAnchor.isActive = false
+            axis = .vertical
+        }
+        view.setNeedsLayout()
         view.layoutIfNeeded()
     }
 }
@@ -36,36 +107,26 @@ enum ScrollDirectionEnum {
     case bottomToTop
 }
 
-class MarqueeView: UIView {
+class MarqueeView: UILabel {
+    
+    /// Marquee is based on stack view as main container for the UILables/UIViews.
+    /// self bounds is the frame of? size to fit to larger view? or uview gets self bounds.
+    /// The stack view is larger than self because it holds in every given moment 3 labels/views with the middle view
+    private var marqueeStackview: UIStackView = UIStackView()
+    private var labels: [UILabel]
+    
+    /// Tells marquee animation direction, set by user.
+    /// TODO: at the moment, it is only posible to give value only on init - change anchors
+    private var scrollDirection: ScrollDirectionEnum
  
-    enum axisEnum {
+    //
+    private enum axisEnum {
         case horizontal
         case vertical
     }
     
-    var axis: axisEnum { return scrollDirection == .topToBottom || scrollDirection == .bottomToTop ? .vertical : .horizontal }
-    var scrollDirection: ScrollDirectionEnum = .leftToRight
-    var marqueeStackview: UIStackView!
-    
-    lazy var labels: [UILabel] = {
-        let label1 = UILabel()
-        label1.text = "label1"
-        label1.textAlignment = .center
-        label1.backgroundColor = .white
-        label1.layer.cornerRadius = 5.0
-        
-        let label2 = UILabel()
-        label2.text = "label2"
-        label2.textAlignment = .center
-        label2.backgroundColor = .green
-        
-        let label3 = UILabel()
-        label3.text = "label3"
-        label3.textAlignment = .center
-        label3.backgroundColor = .purple
-        
-        return [label1, label2, label3]
-    }()
+    //
+    private var axis: axisEnum { return scrollDirection == .topToBottom || scrollDirection == .bottomToTop ? .vertical : .horizontal }
     
     //       ******************
     //MARK:- *** Life Cycle ***
@@ -74,15 +135,12 @@ class MarqueeView: UIView {
         self.init(frame: .zero)
     }
     
-    override init(frame: CGRect) {
+    init(frame: CGRect, labels: [UILabel] = [], scrollDirection: ScrollDirectionEnum = .rightToLeft) {
+        self.labels = labels
+        self.scrollDirection = scrollDirection
         super.init(frame: frame)
         
-        clipsToBounds = true
-        translatesAutoresizingMaskIntoConstraints = false
-        
-        setupStackview()
-        setupLabels()
-        setupButtons()
+        commonInit()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -106,9 +164,19 @@ class MarqueeView: UIView {
         layoutIfNeeded()
     }
     
-    private func setupStackview() {
-        marqueeStackview = UIStackView()
+    //       ****************
+    //MARK:- *** Setup UI ***
+    //       ****************
+    private func commonInit() {
+        clipsToBounds = true
+        translatesAutoresizingMaskIntoConstraints = false
         
+        setupStackview()
+        setupLabels()
+        startScrolling()
+    }
+    
+    private func setupStackview() {
         marqueeStackview.axis = axis == .vertical ? .vertical : .horizontal
         marqueeStackview.distribution = .fillEqually
         marqueeStackview.alignment = .fill
@@ -117,15 +185,18 @@ class MarqueeView: UIView {
         self.addSubview(marqueeStackview)
     }
     
-    func setupLabels() {
+    private func setupLabels() {
         labels.forEach { element in marqueeStackview.addArrangedSubview(element) }
     }
     
-    func setupButtons() {
+    private func startScrolling() {
         let marqueeTimer: Timer! = Timer.scheduledTimer(timeInterval: 2.5, target: self, selector: #selector(action as () -> Void), userInfo: nil, repeats: true)
         print(marqueeTimer)
     }
     
+    //       ******************
+    //MARK:- *** Life ***
+    //       ******************
     func labelToMove() -> UILabel {
         switch scrollDirection {
         case .rightToLeft: return topArragedLabel()
