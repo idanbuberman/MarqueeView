@@ -16,17 +16,14 @@ class ViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.view.backgroundColor = .orange
-        var label1 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-        var label2 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-        var label3 = UILabel(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-        label1.text = "idan"
-        label2.text = "rotem"
-        label3.text = "hillel"
-        label1.backgroundColor = .red
-        label2.backgroundColor = .red
-        label3.backgroundColor = .red
+        let foo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
+        let koo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
+        let goo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
+        foo.backgroundColor = .blue
+        koo.backgroundColor = .red
+        goo.backgroundColor = .green
         
-        let marquee: MarqueeView = MarqueeView(frame: .zero, labels: [label1,label2,label3], scrollDirection: .rightToLeft)
+        let marquee: MarqueeView = MarqueeView(frame: .zero, views: [foo,koo,goo], scrollDirection: .topToBottom)
         marqueeContainer.addSubview(marquee)
         
         marquee.leadingAnchor.constraint(equalTo: marqueeContainer.leadingAnchor).isActive = true
@@ -107,13 +104,14 @@ enum ScrollDirectionEnum {
     case bottomToTop
 }
 
+/// Marquee is based on stack view as main container for animations.
+/// It has array of UIViews, displayed in the marquee according to user's animation prefrences.
+/// Each UIView recieves self.bounds as his frame.
 class MarqueeView: UILabel {
     
-    /// Marquee is based on stack view as main container for the UILables/UIViews.
-    /// self bounds is the frame of? size to fit to larger view? or uview gets self bounds.
-    /// The stack view is larger than self because it holds in every given moment 3 labels/views with the middle view
+    /// Main UIStackView for displaying UIViews.
     private var marqueeStackview: UIStackView = UIStackView()
-    private var labels: [UILabel]
+    private var arrViews: [UIView]
     
     /// Tells marquee animation direction, set by user.
     /// TODO: at the moment, it is only posible to give value only on init - change anchors
@@ -127,17 +125,18 @@ class MarqueeView: UILabel {
     
     //
     private var axis: axisEnum { return scrollDirection == .topToBottom || scrollDirection == .bottomToTop ? .vertical : .horizontal }
+
+    private var displayDuration: TimeInterval
+    private var animationDuration: TimeInterval
     
     //       ******************
     //MARK:- *** Life Cycle ***
     //       ******************
-    convenience init() {
-        self.init(frame: .zero)
-    }
-    
-    init(frame: CGRect, labels: [UILabel] = [], scrollDirection: ScrollDirectionEnum = .rightToLeft) {
-        self.labels = labels
+    init(frame: CGRect, views: [UIView] = [], scrollDirection: ScrollDirectionEnum = .rightToLeft, displayDuration: TimeInterval = 3.0 ,animationDuration: TimeInterval = 0.5) {
+        self.arrViews = views
         self.scrollDirection = scrollDirection
+        self.displayDuration = displayDuration
+        self.animationDuration = animationDuration
         super.init(frame: frame)
         
         commonInit()
@@ -147,19 +146,19 @@ class MarqueeView: UILabel {
         fatalError()
     }
     
+    // For animations reasons, stack view is larger than self width or height (according to axis) 3 times - displayed view, next view to display and dummy view for animation.
     override func draw(_ rect: CGRect) {
         super.draw(rect)
-        
         if axis == .vertical {
-            marqueeStackview.leadingAnchor.constraint(equalTo: self.leadingAnchor).isActive = true
-            marqueeStackview.trailingAnchor.constraint(equalTo: self.trailingAnchor).isActive = true
-            marqueeStackview.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
-            marqueeStackview.heightAnchor.constraint(equalToConstant: self.frame.height * 3).isActive = true
+            marqueeStackview.leadingAnchor.constraint   (equalTo: self.leadingAnchor)           .isActive = true
+            marqueeStackview.trailingAnchor.constraint  (equalTo: self.trailingAnchor)          .isActive = true
+            marqueeStackview.centerYAnchor.constraint   (equalTo: self.centerYAnchor)           .isActive = true
+            marqueeStackview.heightAnchor.constraint    (equalToConstant: self.frame.height * 3).isActive = true
         } else {
-            marqueeStackview.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
-            marqueeStackview.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
-            marqueeStackview.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
-            marqueeStackview.widthAnchor.constraint(equalToConstant: self.frame.width * 3).isActive = true
+            marqueeStackview.topAnchor.constraint       (equalTo: self.topAnchor)               .isActive = true
+            marqueeStackview.bottomAnchor.constraint    (equalTo: self.bottomAnchor)            .isActive = true
+            marqueeStackview.centerXAnchor.constraint   (equalTo: self.centerXAnchor)           .isActive = true
+            marqueeStackview.widthAnchor.constraint     (equalToConstant: self.frame.width * 3) .isActive = true
         }
         layoutIfNeeded()
     }
@@ -172,7 +171,7 @@ class MarqueeView: UILabel {
         translatesAutoresizingMaskIntoConstraints = false
         
         setupStackview()
-        setupLabels()
+        setupViews()
         startScrolling()
     }
     
@@ -185,49 +184,69 @@ class MarqueeView: UILabel {
         self.addSubview(marqueeStackview)
     }
     
-    private func setupLabels() {
-        labels.forEach { element in marqueeStackview.addArrangedSubview(element) }
+    private func setupViews() {
+        guard arrViews.count > 0 else { return }
+        
+        marqueeStackview.addArrangedSubview(arrViews[0])
     }
     
     private func startScrolling() {
-        let marqueeTimer: Timer! = Timer.scheduledTimer(timeInterval: 2.5, target: self, selector: #selector(action as () -> Void), userInfo: nil, repeats: true)
-        print(marqueeTimer)
+        guard arrViews.count > 0 else { return }
+        _ = Timer.scheduledTimer(timeInterval: displayDuration + animationDuration, target: self, selector: #selector(action as () -> Void), userInfo: nil, repeats: true)
     }
     
-    //       ******************
-    //MARK:- *** Life ***
-    //       ******************
-    func labelToMove() -> UILabel {
-        switch scrollDirection {
-        case .rightToLeft: return topArragedLabel()
-        case .leftToRight: return bottomArragedLabel()
-        case .bottomToTop: return topArragedLabel()
-        case .topToBottom: return bottomArragedLabel()
-        }
-    }
-    
-    func topArragedLabel() -> UILabel {
-        let label = labels.first!
-        self.labels.removeFirst()
-        self.labels.append(label)
-        return label
-    }
-    
-    func bottomArragedLabel() -> UILabel {
-        let label = self.labels.last!
-        self.labels.removeLast()
-        self.labels.insert(label, at: 0)
-        return label
-    }
-    
+    //       **************************
+    //MARK:- *** Marquee animations ***
+    //       **************************
     @objc func action() {
-        let foo = labelToMove()
-        UIView.animate(withDuration: 1, animations: {
-            self.marqueeStackview.sendSubview(toBack: foo)
-            self.marqueeStackview.removeArrangedSubview(foo)
-            self.marqueeStackview.addArrangedSubview(foo)
+//        guard arrViews.count > 1 else { return }
+        
+        // Calculations:
+        
+        // View to remove: TTB -> bottom, BTT -> top, RTL -> left, LTR -> right
+        let viewToRemove = previousDisplayedView()
+        
+        // Next view to display, is NOT dsiplayed, but will be in the next run...
+        let viewToDisplay = nextViewToDisplay()
+        
+        UIView.animate(withDuration: animationDuration, animations: {
+            self.marqueeStackview.removeArrangedSubview(viewToRemove)
+            self.marqueeStackview.addArrangedSubview(viewToDisplay)
             self.setNeedsLayout()
             self.layoutIfNeeded()
         })
     }
+    
+    func nextViewToDisplay() -> UIView {
+        switch scrollDirection {
+        case .rightToLeft: return topArrangedLabel()
+        case .leftToRight: return bottomArrangedLabel()
+        case .bottomToTop: return topArrangedLabel()
+        case .topToBottom: return bottomArrangedLabel()
+        }
+    }
+    
+    func previousDisplayedView() -> UIView {
+        switch scrollDirection {
+        case .rightToLeft: return topArrangedLabel()
+        case .leftToRight: return bottomArrangedLabel()
+        case .bottomToTop: return topArrangedLabel()
+        case .topToBottom: return bottomArrangedLabel()
+        }
+    }
+    
+    func topArrangedLabel() -> UIView {
+        let label = arrViews.first!
+        self.arrViews.removeFirst()
+        self.arrViews.append(label)
+        return label
+    }
+    
+    func bottomArrangedLabel() -> UIView {
+        let label = self.arrViews.last!
+        self.arrViews.removeLast()
+        self.arrViews.insert(label, at: 0)
+        return label
+    }
+    
 }
