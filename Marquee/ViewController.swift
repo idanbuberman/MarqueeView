@@ -107,7 +107,7 @@ enum ScrollDirectionEnum {
 /// Marquee is based on stack view as main container for animations.
 /// It has array of UIViews, displayed in the marquee according to user's animation prefrences.
 /// Each UIView recieves self.bounds as his frame.
-class MarqueeView: UILabel {
+class MarqueeView: UIView {
     
     /// Main UIStackView for displaying UIViews.
     private var marqueeStackview: UIStackView = UIStackView()
@@ -116,7 +116,7 @@ class MarqueeView: UILabel {
     /// Tells marquee animation direction, set by user.
     /// TODO: at the moment, it is only posible to give value only on init - change anchors
     private var scrollDirection: ScrollDirectionEnum
- 
+    private var currentDisplayedIndex: Int = 0
     //
     private enum axisEnum {
         case horizontal
@@ -167,7 +167,7 @@ class MarqueeView: UILabel {
     //MARK:- *** Setup UI ***
     //       ****************
     private func commonInit() {
-        clipsToBounds = true
+//        clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
         
         setupStackview()
@@ -187,7 +187,11 @@ class MarqueeView: UILabel {
     private func setupViews() {
         guard arrViews.count > 0 else { return }
         
+        let foo = UIView(frame: .zero)
+        foo.backgroundColor = .purple
+        marqueeStackview.addArrangedSubview(foo)
         marqueeStackview.addArrangedSubview(arrViews[0])
+        marqueeStackview.addArrangedSubview(nextViewToDisplay())
     }
     
     private func startScrolling() {
@@ -198,12 +202,26 @@ class MarqueeView: UILabel {
     //       **************************
     //MARK:- *** Marquee animations ***
     //       **************************
+    func delete(element: UIView) {
+        arrViews = arrViews.filter() { $0 !== element }
+    }
+    
+    func add(element: UIView) {
+        switch scrollDirection {
+        case .rightToLeft,
+             .bottomToTop: arrViews.append(element)
+        case .leftToRight,
+             .topToBottom: arrViews.insert(element, at: 0)
+        }
+    }
+    
     @objc func action() {
 //        guard arrViews.count > 1 else { return }
+    
+//        delete(element: previousDisplayedView())
+//        add(element: previousDisplayedView())
         
-        // Calculations:
-        
-        // View to remove: TTB -> bottom, BTT -> top, RTL -> left, LTR -> right
+        // View to remove
         let viewToRemove = previousDisplayedView()
         
         // Next view to display, is NOT dsiplayed, but will be in the next run...
@@ -218,35 +236,46 @@ class MarqueeView: UILabel {
     }
     
     func nextViewToDisplay() -> UIView {
-        switch scrollDirection {
-        case .rightToLeft: return topArrangedLabel()
-        case .leftToRight: return bottomArrangedLabel()
-        case .bottomToTop: return topArrangedLabel()
-        case .topToBottom: return bottomArrangedLabel()
+        if currentDisplayedIndex+1 > arrViews.count-1 {
+            currentDisplayedIndex = 0
+            return arrViews[0]
+        } else {
+            currentDisplayedIndex += 1
+            return arrViews[currentDisplayedIndex]
         }
+//        switch scrollDirection {
+//        case .rightToLeft,
+//             .bottomToTop: return arrViews[1]
+//        case .leftToRight,
+//             .topToBottom: return arrViews[arrViews.count-1]
+//        }
     }
     
+//    func topArrangedLabel() -> UIView {
+//        let view = arrViews.first!
+//        self.arrViews.removeFirst()
+//        self.arrViews.append(view)
+//        return view
+//    }
+//
+//    func bottomArrangedLabel() -> UIView {
+//        let view = self.arrViews.last!
+//        self.arrViews.removeLast()
+//        self.arrViews.insert(view, at: 0)
+//        return view
+//    }
+    
+    // TTB -> bottom
+    // BTT -> top
+    // RTL -> left
+    // LTR -> right
     func previousDisplayedView() -> UIView {
         switch scrollDirection {
-        case .rightToLeft: return topArrangedLabel()
-        case .leftToRight: return bottomArrangedLabel()
-        case .bottomToTop: return topArrangedLabel()
-        case .topToBottom: return bottomArrangedLabel()
+        case .rightToLeft,
+             .bottomToTop: return marqueeStackview.arrangedSubviews.first!
+        case .leftToRight,
+             .topToBottom: return marqueeStackview.arrangedSubviews.last!
         }
-    }
-    
-    func topArrangedLabel() -> UIView {
-        let label = arrViews.first!
-        self.arrViews.removeFirst()
-        self.arrViews.append(label)
-        return label
-    }
-    
-    func bottomArrangedLabel() -> UIView {
-        let label = self.arrViews.last!
-        self.arrViews.removeLast()
-        self.arrViews.insert(label, at: 0)
-        return label
     }
     
 }
