@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2F5C8B8A204470030043A6F6 /* MarqueeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F5C8B89204470030043A6F6 /* MarqueeView.swift */; };
 		A055828A203F50CD00A5B8EC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0558289203F50CD00A5B8EC /* AppDelegate.swift */; };
 		A055828C203F50CD00A5B8EC /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A055828B203F50CD00A5B8EC /* ViewController.swift */; };
 		A055828F203F50CD00A5B8EC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A055828D203F50CD00A5B8EC /* Main.storyboard */; };
@@ -34,6 +35,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2F5C8B89204470030043A6F6 /* MarqueeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeView.swift; sourceTree = "<group>"; };
 		A0558286203F50CD00A5B8EC /* Marquee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Marquee.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A0558289203F50CD00A5B8EC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A055828B203F50CD00A5B8EC /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 			children = (
 				A0558289203F50CD00A5B8EC /* AppDelegate.swift */,
 				A055828B203F50CD00A5B8EC /* ViewController.swift */,
+				2F5C8B89204470030043A6F6 /* MarqueeView.swift */,
 				A055828D203F50CD00A5B8EC /* Main.storyboard */,
 				A0558290203F50CD00A5B8EC /* Assets.xcassets */,
 				A0558292203F50CD00A5B8EC /* LaunchScreen.storyboard */,
@@ -261,6 +264,7 @@
 			files = (
 				A055828C203F50CD00A5B8EC /* ViewController.swift in Sources */,
 				A055828A203F50CD00A5B8EC /* AppDelegate.swift in Sources */,
+				2F5C8B8A204470030043A6F6 /* MarqueeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
