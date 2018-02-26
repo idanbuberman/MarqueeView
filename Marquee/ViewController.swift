@@ -29,7 +29,7 @@ class ViewController: UIViewController {
         roo.backgroundColor = .magenta
         arrViews = [foo,koo,goo,roo]
         
-        let marquee: MarqueeView = MarqueeView(frame: .zero, dataSource: self, scrollDirection: .scrollingUp)
+        let marquee: MarqueeView = MarqueeView(frame: .zero, dataSource: self, scrollDirection: .scrollingRight)
         marquee.dataSource = self
         marqueeContainer.addSubview(marquee)
         

@@ -110,9 +110,18 @@ class MarqueeView: UIView {
     }
     
     private func setupViews() {
-        marqueeStackview.addArrangedSubview(UIView())
-        marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
-        marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+        switch scrollDirection {
+        case .scrollingRight,
+             .scrollingDown:
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(UIView())
+        case .scrollingLeft,
+             .scrollingUp:
+            marqueeStackview.addArrangedSubview(UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+        }
     }
     
     private func startScrolling() {
@@ -126,11 +135,14 @@ class MarqueeView: UIView {
     @objc private func action() {
         guard let dataSource = dataSource else { return } // With no data source we are not able to present views andanimate the marquee
         
-        // View to remove
+        // View to remove.
         let viewToRemove = previousDisplayedView()
         
         // Next view to display, is NOT dsiplayed, but will be in the next run...
         let viewToDisplay = dataSource.nextViewToDisplay(self, dequeuedView: viewToRemove)
+        
+        // In order to bypass animated add/remove to stack view.
+        viewToRemove.alpha = 0
         viewToDisplay.alpha = 0
         
         UIView.animate(withDuration: animationDuration, animations: {
