@@ -8,22 +8,29 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, MarqueeViewDataSource {
     
+    private var currentDisplayedIndex: Int = 0
     @IBOutlet var marqueeContainer: UIView!
     
+    private var arrViews: [UIView] = []
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         self.view.backgroundColor = .orange
-        let foo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
-        let koo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
-        let goo: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 20))
+        let foo: UIView = UIView(frame: .zero)
+        let koo: UIView = UIView(frame: .zero)
+        let goo: UIView = UIView(frame: .zero)
+        let roo: UIView = UIView(frame: .zero)
         foo.backgroundColor = .blue
         koo.backgroundColor = .red
         goo.backgroundColor = .green
+        roo.backgroundColor = .magenta
+        arrViews = [foo,koo,goo,roo]
         
-        let marquee: MarqueeView = MarqueeView(frame: .zero, views: [foo,koo,goo], scrollDirection: .topToBottom)
+        let marquee: MarqueeView = MarqueeView(frame: .zero, scrollDirection: .scrollingUp)
+        marquee.dataSource = self
         marqueeContainer.addSubview(marquee)
         
         marquee.leadingAnchor.constraint(equalTo: marqueeContainer.leadingAnchor).isActive = true
@@ -95,13 +102,51 @@ class ViewController: UIViewController {
         view.setNeedsLayout()
         view.layoutIfNeeded()
     }
+    
+    /**
+     Returns the next UIView in views array according to managed index.
+     This function is manages the index - once index is out of bouds, it will equate it to zero.
+     
+     - parameter marqueeView: Displaying MarqueeView.
+     - parameter dequeuedView: Use this UIView reference to optimize memory and efficiancy.
+     
+     - returns: Next view in views array to display.
+     */
+    func nextViewToDisplay(_ marqueeView: MarqueeView, dequeuedView: UIView?) -> UIView {
+        var nextView: UIView!
+        if dequeuedView == nil {
+            nextView = UIView()
+        }
+        if currentDisplayedIndex+1 > arrViews.count-1 {
+            currentDisplayedIndex = 0
+            nextView = arrViews[0]
+        } else {
+            currentDisplayedIndex += 1
+            nextView = arrViews[currentDisplayedIndex]
+        }
+        return nextView
+    }
 }
 
 enum ScrollDirectionEnum {
-    case rightToLeft
-    case leftToRight
-    case topToBottom
-    case bottomToTop
+    case scrollingRight
+    case scrollingLeft
+    case scrollingUp
+    case scrollingDown
+}
+
+protocol MarqueeViewDataSource {
+    
+    /**
+     Returns the next UIView in views array according to managed index.
+     This function is manages the index - once index is out of bouds, it will equate it to zero.
+     
+     - parameter marqueeView: Displaying MarqueeView.
+     - parameter dequeuedView: Use this UIView reference to optimize memory and efficiancy.
+     
+     - returns: Next view in views array to display.
+     */
+    func nextViewToDisplay(_ marqueeView: MarqueeView, dequeuedView: UIView?) -> UIView
 }
 
 /// Marquee is based on stack view as main container for animations.
@@ -111,12 +156,12 @@ class MarqueeView: UIView {
     
     /// Main UIStackView for displaying UIViews.
     private var marqueeStackview: UIStackView = UIStackView()
-    private var arrViews: [UIView]
+    var dataSource: MarqueeViewDataSource?
     
     /// Tells marquee animation direction, set by user.
     /// TODO: at the moment, it is only posible to give value only on init - change anchors
     private var scrollDirection: ScrollDirectionEnum
-    private var currentDisplayedIndex: Int = 0
+    
     //
     private enum axisEnum {
         case horizontal
@@ -124,7 +169,7 @@ class MarqueeView: UIView {
     }
     
     //
-    private var axis: axisEnum { return scrollDirection == .topToBottom || scrollDirection == .bottomToTop ? .vertical : .horizontal }
+    private var axis: axisEnum { return scrollDirection == .scrollingUp || scrollDirection == .scrollingDown ? .vertical : .horizontal }
 
     private var displayDuration: TimeInterval
     private var animationDuration: TimeInterval
@@ -132,8 +177,7 @@ class MarqueeView: UIView {
     //       ******************
     //MARK:- *** Life Cycle ***
     //       ******************
-    init(frame: CGRect, views: [UIView] = [], scrollDirection: ScrollDirectionEnum = .rightToLeft, displayDuration: TimeInterval = 3.0 ,animationDuration: TimeInterval = 0.5) {
-        self.arrViews = views
+    init(frame: CGRect, views: [UIView] = [], scrollDirection: ScrollDirectionEnum = .scrollingRight, displayDuration: TimeInterval = 3.0 ,animationDuration: TimeInterval = 0.5) {
         self.scrollDirection = scrollDirection
         self.displayDuration = displayDuration
         self.animationDuration = animationDuration
@@ -167,7 +211,7 @@ class MarqueeView: UIView {
     //MARK:- *** Setup UI ***
     //       ****************
     private func commonInit() {
-//        clipsToBounds = true
+        clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
         
         setupStackview()
@@ -185,97 +229,67 @@ class MarqueeView: UIView {
     }
     
     private func setupViews() {
-        guard arrViews.count > 0 else { return }
-        
-        let foo = UIView(frame: .zero)
-        foo.backgroundColor = .purple
-        marqueeStackview.addArrangedSubview(foo)
-        marqueeStackview.addArrangedSubview(arrViews[0])
-        marqueeStackview.addArrangedSubview(nextViewToDisplay())
+        marqueeStackview.addArrangedSubview(UIView())
+        marqueeStackview.addArrangedSubview(UIView())
+        marqueeStackview.addArrangedSubview(UIView())
     }
     
     private func startScrolling() {
-        guard arrViews.count > 0 else { return }
         _ = Timer.scheduledTimer(timeInterval: displayDuration + animationDuration, target: self, selector: #selector(action as () -> Void), userInfo: nil, repeats: true)
     }
     
     //       **************************
     //MARK:- *** Marquee animations ***
     //       **************************
-    func delete(element: UIView) {
-        arrViews = arrViews.filter() { $0 !== element }
-    }
-    
-    func add(element: UIView) {
-        switch scrollDirection {
-        case .rightToLeft,
-             .bottomToTop: arrViews.append(element)
-        case .leftToRight,
-             .topToBottom: arrViews.insert(element, at: 0)
-        }
-    }
-    
     @objc func action() {
-//        guard arrViews.count > 1 else { return }
-    
-//        delete(element: previousDisplayedView())
-//        add(element: previousDisplayedView())
+        guard let dataSource = dataSource else { return }
         
         // View to remove
         let viewToRemove = previousDisplayedView()
         
         // Next view to display, is NOT dsiplayed, but will be in the next run...
-        let viewToDisplay = nextViewToDisplay()
+        let viewToDisplay = dataSource.nextViewToDisplay(self, dequeuedView: viewToRemove)
+        viewToDisplay.alpha = 0
         
         UIView.animate(withDuration: animationDuration, animations: {
-            self.marqueeStackview.removeArrangedSubview(viewToRemove)
-            self.marqueeStackview.addArrangedSubview(viewToDisplay)
+            if let viewToRemove = viewToRemove {
+                self.marqueeStackview.removeArrangedSubview(viewToRemove)
+            }
+            self.marqueeStackview(addView: viewToDisplay)
             self.setNeedsLayout()
             self.layoutIfNeeded()
-        })
-    }
-    
-    func nextViewToDisplay() -> UIView {
-        if currentDisplayedIndex+1 > arrViews.count-1 {
-            currentDisplayedIndex = 0
-            return arrViews[0]
-        } else {
-            currentDisplayedIndex += 1
-            return arrViews[currentDisplayedIndex]
+        }) { _ in
+            viewToDisplay.alpha = 1
         }
-//        switch scrollDirection {
-//        case .rightToLeft,
-//             .bottomToTop: return arrViews[1]
-//        case .leftToRight,
-//             .topToBottom: return arrViews[arrViews.count-1]
-//        }
     }
     
-//    func topArrangedLabel() -> UIView {
-//        let view = arrViews.first!
-//        self.arrViews.removeFirst()
-//        self.arrViews.append(view)
-//        return view
-//    }
-//
-//    func bottomArrangedLabel() -> UIView {
-//        let view = self.arrViews.last!
-//        self.arrViews.removeLast()
-//        self.arrViews.insert(view, at: 0)
-//        return view
-//    }
-    
-    // TTB -> bottom
-    // BTT -> top
-    // RTL -> left
-    // LTR -> right
-    func previousDisplayedView() -> UIView {
+    /**
+     Adding view to marquee stack according to scrolling direction.
+     
+     - parameter view: Added UIView.
+     - parameter scrollingDirection: Scrolling direction.
+    */
+    private func marqueeStackview(addView view: UIView) {
         switch scrollDirection {
-        case .rightToLeft,
-             .bottomToTop: return marqueeStackview.arrangedSubviews.first!
-        case .leftToRight,
-             .topToBottom: return marqueeStackview.arrangedSubviews.last!
+        case .scrollingRight,
+             .scrollingDown: self.marqueeStackview.insertArrangedSubview(view, at: 0)
+        case .scrollingLeft,
+             .scrollingUp: self.marqueeStackview.addArrangedSubview(view)
         }
     }
     
+    /**
+     Removing view from marquee stack according to scrolling direction.
+     This UIView is either previously displayed or is a dummy view used for the first iteration.
+     
+     - returns: UIView to remove from stack view.
+     */
+    private func previousDisplayedView() -> UIView? {
+        switch scrollDirection {
+        case .scrollingRight,
+             .scrollingDown: return marqueeStackview.arrangedSubviews.last
+        case .scrollingLeft,
+             .scrollingUp: return marqueeStackview.arrangedSubviews.first
+        }
+    }
 }
