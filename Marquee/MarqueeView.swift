@@ -16,7 +16,6 @@ enum ScrollDirectionEnum {
 }
 
 protocol MarqueeViewDataSource {
-    
     /**
      Returns the next UIView in views array according to managed index.
      This function is manages the index - once index is out of bouds, it will equate it to zero.
@@ -26,14 +25,14 @@ protocol MarqueeViewDataSource {
      
      - returns: Next view in views array to display.
      */
-    func nextViewToDisplay(_ marqueeView: MarqueeView, dequeuedView: UIView) -> UIView
+    func nextViewToDisplay<T>(_ marqueeView: MarqueeView<T>, dequeuedView: T) -> T
 }
 
 /// Marquee is based on stack view as main container for animations.
 /// It has array of UIViews, displayed in the marquee according to user's animation prefrences.
 /// Each UIView recieves self.bounds as his frame.
-class MarqueeView: UIView {
-    
+class MarqueeView<View: UIView>: UIView {
+
     var dataSource: MarqueeViewDataSource?
     
     /// Main UIStackView for displaying UIViews.
@@ -113,14 +112,14 @@ class MarqueeView: UIView {
         switch scrollDirection {
         case .scrollingRight,
              .scrollingDown:
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self as! MarqueeView<UIView>, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self as! MarqueeView<UIView>, dequeuedView: UIView()) ?? UIView())
             marqueeStackview.addArrangedSubview(UIView())
         case .scrollingLeft,
              .scrollingUp:
             marqueeStackview.addArrangedSubview(UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self as! MarqueeView<UIView>, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self as! MarqueeView<UIView>, dequeuedView: UIView()) ?? UIView())
         }
     }
     
@@ -139,7 +138,7 @@ class MarqueeView: UIView {
         let viewToRemove = previousDisplayedView()
         
         // Next view to display, is NOT dsiplayed, but will be in the next run...
-        let viewToDisplay = dataSource.nextViewToDisplay(self, dequeuedView: viewToRemove)
+        let viewToDisplay = dataSource.nextViewToDisplay(self as! MarqueeView<UIView>, dequeuedView: viewToRemove)
         
         // In order to bypass animated add/remove to stack view.
         viewToRemove.alpha = 0

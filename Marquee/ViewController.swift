@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+class foo: UIView {}
 class ViewController: UIViewController {
     
     private var currentDisplayedIndex: Int = 0
@@ -29,7 +29,7 @@ class ViewController: UIViewController {
         roo.backgroundColor = .magenta
         arrViews = [foo,koo,goo,roo]
         
-        let marquee: MarqueeView = MarqueeView(frame: .zero, dataSource: self, scrollDirection: .scrollingRight)
+        let marquee: MarqueeView = MarqueeView<foo>(frame: .zero, dataSource: self, scrollDirection: .scrollingRight)
         marquee.dataSource = self
         marqueeContainer.addSubview(marquee)
         
@@ -42,7 +42,7 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: MarqueeViewDataSource {
-
+typealias M = MarqueeView<foo>
     /**
      Returns the next UIView in views array according to managed index.
      This function is manages the index - once index is out of bouds, it will equate it to zero.
@@ -52,11 +52,12 @@ extension ViewController: MarqueeViewDataSource {
      
      - returns: Next view in views array to display.
      */
-    func nextViewToDisplay(_ marqueeView: MarqueeView, dequeuedView: UIView) -> UIView {
+    func nextViewToDisplay<T>(_ marqueeView: MarqueeView<T>, dequeuedView: T) -> T {
+//    func nextViewToDisplay(_ marqueeView: MarqueeView<UIView>, dequeuedView: UIView) -> UIView {
         var nextView = dequeuedView
         if currentDisplayedIndex+1 > arrViews.count-1 {
             currentDisplayedIndex = 0
-            nextView = arrViews[0]
+            nextView = arrViews[0] as! foo
         } else {
             currentDisplayedIndex += 1
             nextView = arrViews[currentDisplayedIndex]
