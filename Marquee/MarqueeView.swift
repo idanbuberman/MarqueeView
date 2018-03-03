@@ -92,6 +92,7 @@ class MarqueeView: UIView {
     //MARK:- *** Setup UI ***
     //       ****************
     private func commonInit() {
+        backgroundColor = .clear
         clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
         
@@ -113,14 +114,14 @@ class MarqueeView: UIView {
         switch scrollDirection {
         case .scrollingRight,
              .scrollingDown:
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView(frame: .zero))
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView(frame: .zero))
             marqueeStackview.addArrangedSubview(UIView())
         case .scrollingLeft,
              .scrollingUp:
             marqueeStackview.addArrangedSubview(UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
-            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView())
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView(frame: .zero))
+            marqueeStackview.addArrangedSubview(dataSource?.nextViewToDisplay(self, dequeuedView: UIView()) ?? UIView(frame: .zero))
         }
     }
     
@@ -145,14 +146,39 @@ class MarqueeView: UIView {
         viewToRemove.alpha = 0
         viewToDisplay.alpha = 0
         
-        UIView.animate(withDuration: animationDuration, animations: {
+//        UIView.animate(withDuration: animationDuration, animations: {
+//            self.marqueeStackview.removeArrangedSubview(viewToRemove)
+//            self.marqueeStackview(addView: viewToDisplay)
+//            self.setNeedsLayout()
+//            self.layoutIfNeeded()
+//        }) { _ in
+//            viewToDisplay.alpha = 1
+//        }
+        
+        /* Do Animations */
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(2.0)
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut))
+        
+        // View animations
+        UIView.animate(withDuration: 2.0, animations: {
             self.marqueeStackview.removeArrangedSubview(viewToRemove)
             self.marqueeStackview(addView: viewToDisplay)
-            self.setNeedsLayout()
+//            self.setNeedsLayout()
             self.layoutIfNeeded()
         }) { _ in
             viewToDisplay.alpha = 1
         }
+        
+        // Layer animations
+//        let cornerAnimation = CABasicAnimation(keyPath: #keyPath(CALayer.cornerRadius))
+//        cornerAnimation.fromValue = oldValue
+//        cornerAnimation.toValue = newButtonWidth/2
+//
+//        styledButton.layer.cornerRadius = newButtonWidth/2
+//        styledButton.layer.add(cornerAnimation, forKey: #keyPath(CALayer.cornerRadius))
+//
+        CATransaction.commit()
     }
     
     /**
